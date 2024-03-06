@@ -14,3 +14,11 @@ git_override(
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
     commit = "204aa593e002cbd177d30f11f54cff3559110bb9",
 )
+
+KERO_MPSC_VERSION = "0.4.0"
+bazel_dep(name = "kero_mpsc", version = KERO_MPSC_VERSION)
+archive_override(
+    module_name = "kero_mpsc",
+    urls = ["https://github.com/oneofthezombies/kero-mpsc/archive/refs/tags/v" + KERO_MPSC_VERSION + ".zip"],
+    strip_prefix = "kero-mpsc-" + KERO_MPSC_VERSION,
+)
