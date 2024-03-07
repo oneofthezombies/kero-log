@@ -4,6 +4,7 @@
 #include "kero_mpsc.h"
 #include <source_location>
 #include <sstream>
+#include <unordered_map>
 
 namespace kero {
 namespace log {

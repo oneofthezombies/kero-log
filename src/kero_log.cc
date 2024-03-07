@@ -1,8 +1,6 @@
 #include "kero_log.h"
 #include "kero_mpsc.h"
 
-#include <memory>
-
 namespace kero {
 namespace log {
 

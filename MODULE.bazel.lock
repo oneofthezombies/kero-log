@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 3,
-  "moduleFileHash": "4837843ba14ef0a36a09c008ffd50e38dd44dcc3cc8d584157f41ab4ff6f25e7",
+  "moduleFileHash": "886b59cec3e8a2f4c0e86ea4fd54bda414923440aad3d83b69484395087833f6",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -140,7 +140,7 @@
     },
     "kero_mpsc@_": {
       "name": "kero_mpsc",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "key": "kero_mpsc@_",
       "repoName": "kero_mpsc",
       "executionPlatformsToRegister": [],
