@@ -4,6 +4,7 @@
 #include "kero_mpsc.h"
 #include <source_location>
 #include <sstream>
+#include <thread>
 #include <unordered_map>
 
 namespace kero {
@@ -16,8 +17,11 @@ enum class Level : int8_t {
   kDebug = 30,
 };
 
+namespace impl {
+
 struct Event {
-  std::unordered_map<std::string, std::string> data;
+  std::unordered_map<std::string, std::string> data{};
+  std::string category{};
   std::string message;
   std::source_location location;
   Level level;
@@ -32,22 +36,13 @@ struct Event {
   auto operator=(const Event &) -> Event & = delete;
 };
 
-struct Mail {
-  Event event;
-  std::string category;
+} // namespace impl
 
-  Mail(Event &&event, std::string &&category);
-  ~Mail() = default;
-  Mail(Mail &&) = default;
-  auto operator=(Mail &&) -> Mail & = default;
-
-  Mail(const Mail &) = delete;
-  auto operator=(const Mail &) -> Mail & = delete;
-};
+using Event = std::unique_ptr<impl::Event>;
 
 class Sender {
 public:
-  Sender(std::string &&category, kero::mpsc::Tx<Mail> &&tx);
+  Sender(std::string &&category, kero::mpsc::Tx<Event> &&tx);
   Sender(Sender &&) = default;
   ~Sender() = default;
   auto operator=(Sender &&) -> Sender & = default;
@@ -59,8 +54,10 @@ public:
 
 private:
   std::string category_;
-  kero::mpsc::Tx<Mail> tx_;
+  kero::mpsc::Tx<Event> tx_;
 };
+
+auto LocalSender() -> Sender &;
 
 class Builder {
 public:
@@ -75,13 +72,13 @@ public:
 
   template <typename T>
   [[nodiscard]] auto Data(std::string &&key, T &&value) -> Builder & {
-    if (auto it = event_.data.find(key); it != event_.data.end()) {
+    if (auto it = event_->data.find(key); it != event_->data.end()) {
       // TODO: debug log with key and value
     }
 
     std::stringstream ss;
     ss << std::forward<T>(value);
-    event_.data[std::move(key)] = ss.str();
+    event_->data[std::move(key)] = ss.str();
     return *this;
   }
 
@@ -89,7 +86,6 @@ public:
 
 private:
   Event event_;
-  bool sent_{false};
 };
 
 [[nodiscard]] auto
@@ -124,11 +120,11 @@ public:
 
   auto CreateSender(std::string &&category = "") -> Sender;
 
-  // TODO: reimpl
-  auto Run() -> void;
+  auto RunOnThread() -> std::thread;
+  auto Poll() -> void;
 
 private:
-  kero::mpsc::Channel<Mail> channel_;
+  kero::mpsc::Channel<Event> channel_;
 };
 
 auto GlobalCenter() -> Center &;
