@@ -1,4 +1,8 @@
 #include "kero_log.h"
 #include "gtest/gtest.h"
 
-TEST(LogTest, Base) { ASSERT_EQ(1, 1); }
+TEST(LogTest, Base) {
+  auto center = kero::log::Center();
+  auto sender = center.CreateSender("test");
+  kero::log::Debug("test").Send(sender);
+}

@@ -2,116 +2,132 @@
 #define KERO_LOG_H
 
 #include "kero_mpsc.h"
-#include <format>
 #include <source_location>
 #include <sstream>
-#include <string_view>
 
 namespace kero {
 namespace log {
 
 enum class Level : int8_t {
-  Error = 0,
-  Warn = 1,
-  Info = 2,
-  Debug = 3,
+  kError = 0,
+  kWarn = 10,
+  kInfo = 20,
+  kDebug = 30,
 };
 
 struct Event {
-  Event(std::source_location &&location, std::string &&message,
+  std::unordered_map<std::string, std::string> data;
+  std::string message;
+  std::source_location location;
+  Level level;
+
+  Event(std::string &&message, std::source_location &&location,
         const Level level);
   Event(Event &&) = default;
-  auto operator=(Event &&) -> Event & = default;
   ~Event() = default;
+  auto operator=(Event &&) -> Event & = default;
 
   Event(const Event &) = delete;
   auto operator=(const Event &) -> Event & = delete;
-
-  std::unordered_map<std::string, std::string> data_;
-  std::source_location location_;
-  std::string message_;
-  Level level_;
 };
 
-struct Sender {
-  Sender(std::source_location &&location, std::string &&message,
-         const Level level);
-  ~Sender() = default;
+struct Mail {
+  Event event;
+  std::string category;
 
-  Sender(Sender &&) = delete;
+  Mail(Event &&event, std::string &&category);
+  ~Mail() = default;
+  Mail(Mail &&) = default;
+  auto operator=(Mail &&) -> Mail & = default;
+
+  Mail(const Mail &) = delete;
+  auto operator=(const Mail &) -> Mail & = delete;
+};
+
+class Sender {
+public:
+  Sender(std::string &&category, kero::mpsc::Tx<Mail> &&tx);
+  Sender(Sender &&) = default;
+  ~Sender() = default;
+  auto operator=(Sender &&) -> Sender & = default;
+
   Sender(const Sender &) = delete;
-  auto operator=(Sender &&) -> Sender & = delete;
   auto operator=(const Sender &) -> Sender & = delete;
 
-  template <typename T>
-  [[nodiscard]] auto data(std::string &&key, T &&value) -> Sender &;
+  auto Send(Event &&event) -> void;
 
-  auto send() -> void;
+private:
+  std::string category_;
+  kero::mpsc::Tx<Mail> tx_;
+};
+
+class Builder {
+public:
+  Builder(std::string &&message, std::source_location &&location,
+          const Level level);
+  ~Builder() = default;
+
+  Builder(Builder &&) = delete;
+  Builder(const Builder &) = delete;
+  auto operator=(Builder &&) -> Builder & = delete;
+  auto operator=(const Builder &) -> Builder & = delete;
+
+  template <typename T>
+  [[nodiscard]] auto Data(std::string &&key, T &&value) -> Builder & {
+    if (auto it = event_.data.find(key); it != event_.data.end()) {
+      // TODO: debug log with key and value
+    }
+
+    std::stringstream ss;
+    ss << std::forward<T>(value);
+    event_.data[std::move(key)] = ss.str();
+    return *this;
+  }
+
+  auto Send(Sender &sender) -> void;
 
 private:
   Event event_;
   bool sent_{false};
 };
 
-struct Local {
-  [[nodiscard]] auto
-  debug(std::string &&message,
-        std::source_location &&location = std::source_location::current()) const
-      -> Sender;
+[[nodiscard]] auto
+Debug(std::string &&message,
+      std::source_location &&location = std::source_location::current())
+    -> Builder;
 
-  [[nodiscard]] auto
-  info(std::string &&message,
-       std::source_location &&location = std::source_location::current()) const
-      -> Sender;
+[[nodiscard]] auto
+Info(std::string &&message,
+     std::source_location &&location = std::source_location::current())
+    -> Builder;
 
-  [[nodiscard]] auto
-  warn(std::string &&message,
-       std::source_location &&location = std::source_location::current()) const
-      -> Sender;
+[[nodiscard]] auto
+Warn(std::string &&message,
+     std::source_location &&location = std::source_location::current())
+    -> Builder;
 
-  [[nodiscard]] auto
-  error(std::string &&message,
-        std::source_location &&location = std::source_location::current()) const
-      -> Sender;
-};
+[[nodiscard]] auto
+Error(std::string &&message,
+      std::source_location &&location = std::source_location::current())
+    -> Builder;
 
-auto local() -> const Local &;
-
-struct Center {
-  Center(kero::mpsc::Tx<Event> &&tx, kero::mpsc::Rx<Event> &&rx);
+class Center {
+public:
+  Center();
   ~Center() = default;
+  Center(Center &&) = default;
+  auto operator=(Center &&) -> Center & = default;
 
-  Center(Center &&) = delete;
   Center(const Center &) = delete;
-  auto operator=(Center &&) -> Center & = delete;
   auto operator=(const Center &) -> Center & = delete;
 
+  auto CreateSender(std::string &&category = "") -> Sender;
+
 private:
-  kero::mpsc::Tx<Event> tx_;
-  kero::mpsc::Rx<Event> rx_;
+  kero::mpsc::Channel<Mail> channel_;
 };
 
-auto center() -> Center &;
-
-////////////////////////////////////////////////////////////////
-// Template definitions begin
-////////////////////////////////////////////////////////////////
-
-template <typename T>
-auto Sender::data(std::string &&key, T &&value) -> Sender & {
-  if (auto it = event_.data_.find(key); it != event_.data_.end()) {
-    // TODO: debug log with key and value
-  }
-
-  std::stringstream ss;
-  ss << value;
-  event_.data_[std::move(key)] = ss.str();
-  return *this;
-}
-
-////////////////////////////////////////////////////////////////
-// Template definitions end
-////////////////////////////////////////////////////////////////
+auto GlobalCenter() -> Center &;
 
 } // namespace log
 } // namespace kero

@@ -1,67 +1,68 @@
 #include "kero_log.h"
 #include "kero_mpsc.h"
 
+#include <memory>
+
 namespace kero {
 namespace log {
 
-Event::Event(std::source_location &&location, std::string &&message,
+Event::Event(std::string &&message, std::source_location &&location,
              const Level level)
-    : location_(location), message_(message), level_(level) {}
+    : message(std::move(message)), location(std::move(location)), level(level) {
+}
 
-Sender::Sender(std::source_location &&location, std::string &&message,
-               const Level level)
-    : event_{std::move(location), std::move(message), level} {}
+Mail::Mail(Event &&event, std::string &&category)
+    : event(std::move(event)), category(std::move(category)) {}
 
-auto Sender::send() -> void {
+Sender::Sender(std::string &&category, kero::mpsc::Tx<Mail> &&tx)
+    : category_(std::move(category)), tx_(std::move(tx)) {}
+
+auto Sender::Send(Event &&event) -> void {
+  auto category = category_;
+  tx_.Send(Mail{std::move(event), std::move(category)});
+}
+
+Builder::Builder(std::string &&message, std::source_location &&location,
+                 const Level level)
+    : event_{std::move(message), std::move(location), level} {}
+
+auto Builder::Send(Sender &sender) -> void {
   if (sent_) {
-    // TODO: debug log with message
+    // TODO: log error
     return;
   }
 
+  sender.Send(std::move(event_));
   sent_ = true;
 }
 
-auto Local::debug(std::string &&message, std::source_location &&location) const
-    -> Sender {
-  return Sender{std::move(location), std::move(message), Level::Debug};
+auto Debug(std::string &&message, std::source_location &&location) -> Builder {
+  return Builder{std::move(message), std::move(location), Level::kDebug};
 }
 
-auto Local::info(std::string &&message, std::source_location &&location) const
-    -> Sender {
-  return Sender{std::move(location), std::move(message), Level::Info};
+auto Info(std::string &&message, std::source_location &&location) -> Builder {
+  return Builder{std::move(message), std::move(location), Level::kInfo};
 }
 
-auto Local::warn(std::string &&message, std::source_location &&location) const
-    -> Sender {
-  return Sender{std::move(location), std::move(message), Level::Warn};
+auto Warn(std::string &&message, std::source_location &&location) -> Builder {
+  return Builder{std::move(message), std::move(location), Level::kWarn};
 }
 
-auto Local::error(std::string &&message, std::source_location &&location) const
-    -> Sender {
-  return Sender{std::move(location), std::move(message), Level::Error};
+auto Error(std::string &&message, std::source_location &&location) -> Builder {
+  return Builder{std::move(message), std::move(location), Level::kError};
 }
 
-auto local() -> const Local & {
-  thread_local Local local{};
-  return local;
+Center::Center() : channel_{kero::mpsc::Channel<Mail>::Builder{}.Build()} {}
+
+auto Center::CreateSender(std::string &&category) -> Sender {
+  return Sender{std::move(category), channel_.tx.Clone()};
 }
 
-Center::Center(kero::mpsc::Tx<Event> &&tx, kero::mpsc::Rx<Event> &&rx)
-    : tx_{std::move(tx)}, rx_{std::move(rx)} {}
-
-auto CreateCenter() -> Center {
-  auto [tx, rx] = kero::mpsc::channel<Event>();
-  return Center{std::move(tx), std::move(rx)};
-}
-
-auto center() -> Center & {
-  static Center center = CreateCenter();
-  return center;
-}
-
-auto example() -> void {
-  auto &center = kero::log::center();
-  kero::log::local().debug("").data("", 1).send();
+auto GlobalCenter() -> Center & {
+  static std::unique_ptr<Center> center{nullptr};
+  static std::once_flag flag{};
+  std::call_once(flag, []() { center.reset(new Center{}); });
+  return *center;
 }
 
 } // namespace log
