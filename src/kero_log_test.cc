@@ -3,6 +3,7 @@
 
 TEST(LogTest, Base) {
   auto center = kero::log::Center();
-  auto sender = center.CreateSender("test");
+  center.Run();
+  auto sender = center.CreateSender("test-category");
   kero::log::Debug("test").Send(sender);
 }

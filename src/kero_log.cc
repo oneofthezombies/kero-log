@@ -1,6 +1,8 @@
 #include "kero_log.h"
 #include "kero_mpsc.h"
 
+#include <iostream>
+
 namespace kero {
 namespace log {
 
@@ -54,6 +56,17 @@ Center::Center() : channel_{kero::mpsc::Channel<Mail>::Builder{}.Build()} {}
 
 auto Center::CreateSender(std::string &&category) -> Sender {
   return Sender{std::move(category), channel_.tx.Clone()};
+}
+
+auto Center::Run() -> void {
+  auto receiver = std::thread([rx = std::move(channel_.rx)]() {
+    while (true) {
+      auto mail = rx.Receive();
+      std::cout << mail.category << std::endl;
+      std::cout << mail.event.message << std::endl;
+    }
+  });
+  receiver.detach();
 }
 
 auto GlobalCenter() -> Center & {

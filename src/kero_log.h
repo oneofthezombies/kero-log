@@ -124,6 +124,9 @@ public:
 
   auto CreateSender(std::string &&category = "") -> Sender;
 
+  // TODO: reimpl
+  auto Run() -> void;
+
 private:
   kero::mpsc::Channel<Mail> channel_;
 };
