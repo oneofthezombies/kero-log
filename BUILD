@@ -19,6 +19,7 @@ cc_library(
     ],
     copts = ["-std=c++20"],
     includes = ["src"],
+    visibility = ["//visibility:public"],
     deps = [
         "@kero_mpsc",
     ],
