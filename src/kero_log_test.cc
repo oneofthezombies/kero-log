@@ -1,26 +1,18 @@
-#include "kero_log.h"
+#include "center.h"
+#include "log_builder.h"
+#include "logger.h"
 #include "gtest/gtest.h"
 
-TEST(LogTest, Stack) {
-  auto center = kero::log::Center{};
-  auto thread = center.RunOnThread();
-  auto sender = center.CreateSender("test-category");
-  kero::log::Debug("test").Send(sender);
-  thread.join();
+TEST(LogTest, LocalCenter) {
+  auto center = kero::log::Center::Builder{}.Build();
+  center.SetLogLevel(kero::log::Level::kDebug);
+  auto logger = center.CreateLogger("example");
+  kero::log::Debug("Hello, world!").Log(logger);
+  center.Shutdown();
 }
 
-TEST(LogTest, Global) {
-  auto &center = kero::log::GlobalCenter();
-  auto thread = center.RunOnThread();
-  auto sender = center.CreateSender("test-category");
-  kero::log::Debug("test").Send(sender);
-  thread.join();
-}
-
-TEST(LogTest, Local) {
-  auto &center = kero::log::GlobalCenter();
-  auto thread = center.RunOnThread();
-  auto &sender = kero::log::LocalSender();
-  kero::log::Debug("test").Send(sender);
-  thread.join();
+TEST(LogTest, GlobalCenter) {
+  kero::log::GlobalCenter().SetLogLevel(kero::log::Level::kDebug);
+  kero::log::Debug("Hello, world!").Log();
+  kero::log::GlobalCenter().Shutdown();
 }
