@@ -1,6 +1,4 @@
-#include "center.h"
-#include "log_builder.h"
-#include "logger.h"
+#include "kero_log.h"
 
 auto main() -> int {
   auto center = kero::log::Center::Builder{}.Build();
