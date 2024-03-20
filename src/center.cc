@@ -9,9 +9,7 @@ auto Center::Builder::Build() -> Center {
   auto [event_tx, event_rx] =
       mpsc::Channel<std::unique_ptr<internal::Event>>::Builder{}.Build();
   auto runner = internal::Runner::Builder{}.Build(std::move(event_rx));
-  auto center{Center{std::move(event_tx), std::move(runner)}};
-  center.AddTransport(std::make_unique<ConsoleTransport>());
-  return center;
+  return Center{std::move(event_tx), std::move(runner)};
 }
 
 Center::Center(mpsc::Tx<std::unique_ptr<internal::Event>>&& event_tx,
