@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 6,
-  "moduleFileHash": "95010c2c597e90d2b56d2d81facac4c2540abf56d7ae644aeeed45a62a748596",
+  "moduleFileHash": "dd3bd177b36243cf899016bad71820c454ec72a327a19709f92d6bb907a2f361",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -18,7 +18,7 @@
   "moduleDepGraph": {
     "<root>": {
       "name": "kero_log",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "key": "<root>",
       "repoName": "kero_log",
       "executionPlatformsToRegister": [],
