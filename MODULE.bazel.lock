@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 6,
-  "moduleFileHash": "e2fd94a395be9ab3e630d37ca915d0cc710d7e919d0318e190de9003501ca8b8",
+  "moduleFileHash": "8593db7620fae6801a153565cd3d5e81e164cc4b3b59db38a7e409e617ce8fd3",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -28,6 +28,7 @@
         "googletest": "googletest@1.14.0",
         "hedron_compile_commands": "hedron_compile_commands@_",
         "kero_mpsc": "kero_mpsc@_",
+        "kero_spsc": "kero_spsc@_",
         "bazel_tools": "bazel_tools@_",
         "local_config_platform": "local_config_platform@_"
       }
@@ -142,6 +143,20 @@
       "version": "0.9.0",
       "key": "kero_mpsc@_",
       "repoName": "kero_mpsc",
+      "executionPlatformsToRegister": [],
+      "toolchainsToRegister": [],
+      "extensionUsages": [],
+      "deps": {
+        "googletest": "googletest@1.14.0",
+        "bazel_tools": "bazel_tools@_",
+        "local_config_platform": "local_config_platform@_"
+      }
+    },
+    "kero_spsc@_": {
+      "name": "kero_spsc",
+      "version": "0.2.1",
+      "key": "kero_spsc@_",
+      "repoName": "kero_spsc",
       "executionPlatformsToRegister": [],
       "toolchainsToRegister": [],
       "extensionUsages": [],

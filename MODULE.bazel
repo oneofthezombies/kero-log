@@ -22,3 +22,11 @@ archive_override(
     urls = ["https://github.com/oneofthezombies/kero-mpsc/archive/refs/tags/v" + KERO_MPSC_VERSION + ".zip"],
     strip_prefix = "kero-mpsc-" + KERO_MPSC_VERSION,
 )
+
+KERO_SPSC_VERSION = "0.2.1"
+bazel_dep(name = "kero_spsc", version = KERO_SPSC_VERSION)
+archive_override(
+    module_name = "kero_spsc",
+    urls = ["https://github.com/oneofthezombies/kero-spsc/archive/refs/tags/v" + KERO_SPSC_VERSION + ".zip"],
+    strip_prefix = "kero-spsc-" + KERO_SPSC_VERSION,
+)

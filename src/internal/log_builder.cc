@@ -1,20 +1,29 @@
 #include "log_builder.h"
 
+#include "core.h"
+#include "local_context.h"
+
 namespace kero {
 namespace log {
 
 LogBuilder::LogBuilder(std::string&& message, std::source_location&& location,
-                       const Level level)
+                       const Level level) noexcept
     : log_{std::make_unique<kero::log::Log>(std::move(message),
                                             std::move(location), level)} {}
 
-auto LogBuilder::Log(Logger& logger) -> void {
+auto LogBuilder::Log() noexcept -> Result<void> {
   if (!log_) {
-    kero::log::Debug("log must not be null").Log();
-    return;
+    return Result<void>{kero::Error{ErrorCode::kLogAlreadyConsumed,
+                                    "Log already consumed, cannot log."}};
   }
 
-  logger.Log(std::move(log_));
+  if (!GetLocalContext()) {
+    return Result<void>{kero::Error{ErrorCode::kLocalContextNotFound,
+                                    "Failed to get LocalContext, cannot log."}};
+  }
+
+  GetLocalContext()->SendLog(std::move(log_));
+  return Result<void>{};
 }
 
 auto Debug(std::string&& message, std::source_location&& location)
