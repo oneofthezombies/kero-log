@@ -13,7 +13,8 @@ public:
   virtual ~Transport() noexcept = default;
   KERO_STRUCT_TYPE_MOVE(Transport);
 
-  auto SetLogLevel(const Level level) noexcept -> void;
+  auto SetLevel(const Level level) noexcept -> void;
+  auto GetLevel() const noexcept -> Level;
 
   virtual auto OnLog(const Log& log) noexcept -> void = 0;
 

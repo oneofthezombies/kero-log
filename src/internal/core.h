@@ -23,7 +23,6 @@ auto LevelToString(const Level level) noexcept -> std::string;
 
 struct Log {
   std::unordered_map<std::string, std::string> data{};
-  std::string category{};
   std::string message;
   std::source_location location;
   Level level;
@@ -37,8 +36,9 @@ struct Log {
 struct ShutdownConfig {
   std::chrono::milliseconds timeout;
 
-  ShutdownConfig();
-  ~ShutdownConfig() = default;
+  ShutdownConfig() noexcept;
+  ShutdownConfig(std::chrono::milliseconds&& timeout) noexcept;
+  ~ShutdownConfig() noexcept = default;
   KERO_STRUCT_TYPE_MOVE(ShutdownConfig);
 };
 

@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <thread>
 
 namespace kero {
 namespace log {

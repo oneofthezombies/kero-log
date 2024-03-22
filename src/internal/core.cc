@@ -23,7 +23,11 @@ Log::Log(std::string&& message, std::source_location&& location,
     : message(std::move(message)), location(std::move(location)), level(level) {
 }
 
-ShutdownConfig::ShutdownConfig() : timeout{std::chrono::milliseconds{1000}} {}
+ShutdownConfig::ShutdownConfig() noexcept
+    : timeout{std::chrono::milliseconds{1000}} {}
+
+ShutdownConfig::ShutdownConfig(std::chrono::milliseconds&& timeout) noexcept
+    : timeout{std::move(timeout)} {}
 
 } // namespace log
 } // namespace kero

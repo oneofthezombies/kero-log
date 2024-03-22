@@ -56,10 +56,14 @@ auto GlobalContext::AddLogRx(
 auto GlobalContext::RemoveLogRx(const std::string& thread_id) noexcept
     -> Result<void> {
   std::lock_guard<std::mutex> lock(shared_state_mutex_);
-  if (shared_state_.log_rx_map.find(thread_id) ==
-      shared_state_.log_rx_map.end()) {
+  auto entry = shared_state_.log_rx_map.find(thread_id);
+  if (entry == shared_state_.log_rx_map.end()) {
     return Result<void>{
         Error{ErrorCode::kLogRxNotFound, "Key " + thread_id + " not found"}};
+  }
+
+  while (auto log = entry->second.TryReceive()) {
+    shared_state_.orphaned_logs.push_back(std::move(*log));
   }
 
   shared_state_.log_rx_map.erase(thread_id);
@@ -78,21 +82,54 @@ auto GlobalContext::AddTransport(
   shared_state_.transports.push_back(std::move(transport));
 }
 
-auto GlobalContext::ConsumeLogs() noexcept -> void {
+auto GlobalContext::IsLogsEmpty() const noexcept -> bool {
   std::lock_guard<std::mutex> lock(shared_state_mutex_);
+  if (!shared_state_.orphaned_logs.empty()) {
+    return false;
+  }
   for (const auto& [thread_id, log_rx] : shared_state_.log_rx_map) {
-    while (auto log_opt = log_rx.TryReceive()) {
-      const auto& log_ptr = *log_opt;
-      if (!log_ptr) {
-        shared_state_.system_error_stream.get()
-            << "Internal: log_ptr must not be null." << std::endl;
+    if (!log_rx.IsEmpty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+auto GlobalContext::ConsumeLog() noexcept -> void {
+  std::lock_guard<std::mutex> lock(shared_state_mutex_);
+
+  auto consume = [this](const std::unique_ptr<kero::log::Log>& log_ptr) {
+    if (!log_ptr) {
+      shared_state_.system_error_stream.get()
+          << "Internal: log_ptr must not be null." << std::endl;
+      return;
+    }
+
+    for (auto& transport : shared_state_.transports) {
+      if (log_ptr->level > transport->GetLevel()) {
         continue;
       }
 
-      for (auto& transport : shared_state_.transports) {
-        transport->OnLog(*log_ptr);
-      }
+      transport->OnLog(*log_ptr);
     }
+  };
+
+  if (!shared_state_.orphaned_logs.empty()) {
+    auto log = std::move(shared_state_.orphaned_logs.front());
+    shared_state_.orphaned_logs.pop_front();
+
+    consume(log);
+    return;
+  }
+
+  for (const auto& [thread_id, log_rx] : shared_state_.log_rx_map) {
+    auto log = log_rx.TryReceive();
+    if (!log) {
+      continue;
+    }
+
+    consume(*log);
+    return;
   }
 }
 
@@ -116,42 +153,41 @@ auto RunOnThread(mpsc::Rx<std::unique_ptr<RunnerEvent>>&& runner_event_rx)
     }
 
     auto event_opt = runner_event_rx.TryReceive();
-    if (shutdown_requested && !event_opt) {
+    if (shutdown_requested && !event_opt && GetGlobalContext().IsLogsEmpty()) {
       break;
     }
 
-    if (!event_opt) {
-      continue;
-    }
+    if (event_opt) {
+      auto& event_ptr = *event_opt;
+      if (!event_ptr) {
+        GetGlobalContext().LogSystemError(
+            "Internal: event_ptr must not be null.");
+        continue;
+      }
 
-    auto& event_ptr = *event_opt;
-    if (!event_ptr) {
-      GetGlobalContext().LogSystemError(
-          "Internal: event_ptr must not be null.");
-      continue;
-    }
+      std::visit(
+          [&shutdown_deadline](auto&& event) {
+            using T = std::decay_t<decltype(event)>;
 
-    std::visit(
-        [&shutdown_deadline](auto&& event) {
-          using T = std::decay_t<decltype(event)>;
+            if constexpr (std::is_same_v<T, runner_event::Shutdown>) {
+              if (shutdown_deadline) {
+                GetGlobalContext().LogSystemError(
+                    "Shutdown already scheduled.");
+                return;
+              }
 
-          if constexpr (std::is_same_v<T, runner_event::Shutdown>) {
-            if (shutdown_deadline) {
-              GetGlobalContext().LogSystemError("Shutdown already scheduled.");
-              return;
+              runner_event::Shutdown& shutdown = event;
+              shutdown_deadline =
+                  std::chrono::steady_clock::now() + shutdown.config.timeout;
+            } else {
+              static_assert(always_false_v<T>,
+                            "every RunnerEvent must be handled.");
             }
+          },
+          *event_ptr);
+    }
 
-            runner_event::Shutdown& shutdown = event;
-            shutdown_deadline =
-                std::chrono::steady_clock::now() + shutdown.config.timeout;
-          } else {
-            static_assert(always_false_v<T>,
-                          "every RunnerEvent must be handled.");
-          }
-        },
-        *event_ptr);
-
-    GetGlobalContext().ConsumeLogs();
+    GetGlobalContext().ConsumeLog();
   }
 }
 

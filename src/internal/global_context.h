@@ -27,6 +27,7 @@ public:
   struct SharedState {
     std::unordered_map<std::string, spsc::Rx<std::unique_ptr<kero::log::Log>>>
         log_rx_map{};
+    std::deque<std::unique_ptr<kero::log::Log>> orphaned_logs{};
     std::vector<std::unique_ptr<Transport>> transports{};
     std::reference_wrapper<std::ostream> system_error_stream;
 
@@ -48,7 +49,8 @@ public:
 
   auto Shutdown(ShutdownConfig&& config) noexcept -> void;
   auto AddTransport(std::unique_ptr<Transport>&& transport) noexcept -> void;
-  auto ConsumeLogs() noexcept -> void;
+  auto IsLogsEmpty() const noexcept -> bool;
+  auto ConsumeLog() noexcept -> void;
 
 private:
   GlobalContext(mpsc::Tx<std::unique_ptr<RunnerEvent>>&& runner_event_tx,
@@ -56,7 +58,7 @@ private:
 
   NullStream null_stream_{};
   SharedState shared_state_;
-  std::mutex shared_state_mutex_{};
+  mutable std::mutex shared_state_mutex_{};
   mpsc::Tx<std::unique_ptr<RunnerEvent>> runner_event_tx_;
   std::thread runner_thread_;
 };

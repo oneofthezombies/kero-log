@@ -23,7 +23,7 @@ archive_override(
     strip_prefix = "kero-mpsc-" + KERO_MPSC_VERSION,
 )
 
-KERO_SPSC_VERSION = "0.2.1"
+KERO_SPSC_VERSION = "0.2.2"
 bazel_dep(name = "kero_spsc", version = KERO_SPSC_VERSION)
 archive_override(
     module_name = "kero_spsc",
