@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 6,
-  "moduleFileHash": "dd3bd177b36243cf899016bad71820c454ec72a327a19709f92d6bb907a2f361",
+  "moduleFileHash": "04b489cfa5fc9a19151b2c197ec35cee1ed6bf39cd2dd32df4cffd7461cbfc44",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -154,7 +154,7 @@
     },
     "kero_spsc@_": {
       "name": "kero_spsc",
-      "version": "0.2.2",
+      "version": "0.2.4",
       "key": "kero_spsc@_",
       "repoName": "kero_spsc",
       "executionPlatformsToRegister": [],

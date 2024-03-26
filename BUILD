@@ -43,13 +43,6 @@ cc_test(
     ],
 )
 
-cc_binary(
-    name = "kero_log_example",
-    srcs = ["src/kero_log_example.cc"],
-    copts = ["-std=c++20"],
-    deps = [":kero_log"],
-)
-
 cc_test(
     name = "kero_common_test",
     srcs = [
