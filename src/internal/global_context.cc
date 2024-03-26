@@ -82,44 +82,14 @@ auto GlobalContext::AddTransport(
   shared_state_.transports.push_back(std::move(transport));
 }
 
-auto GlobalContext::IsLogsEmpty() const noexcept -> bool {
+auto GlobalContext::TryPopLog() noexcept
+    -> std::optional<std::unique_ptr<kero::log::Log>> {
   std::lock_guard<std::mutex> lock(shared_state_mutex_);
-  if (!shared_state_.orphaned_logs.empty()) {
-    return false;
-  }
-  for (const auto& [thread_id, log_rx] : shared_state_.log_rx_map) {
-    if (!log_rx.IsEmpty()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-auto GlobalContext::ConsumeLog() noexcept -> void {
-  std::lock_guard<std::mutex> lock(shared_state_mutex_);
-
-  auto consume = [this](const std::unique_ptr<kero::log::Log>& log_ptr) {
-    if (!log_ptr) {
-      shared_state_.system_error_stream.get()
-          << "Internal: log_ptr must not be null." << std::endl;
-      return;
-    }
-
-    for (auto& transport : shared_state_.transports) {
-      if (log_ptr->level > transport->GetLevel()) {
-        continue;
-      }
-
-      transport->OnLog(*log_ptr);
-    }
-  };
 
   if (!shared_state_.orphaned_logs.empty()) {
     auto log = std::move(shared_state_.orphaned_logs.front());
     shared_state_.orphaned_logs.pop_front();
-
-    consume(log);
-    return;
+    return log;
   }
 
   for (const auto& [thread_id, log_rx] : shared_state_.log_rx_map) {
@@ -128,8 +98,22 @@ auto GlobalContext::ConsumeLog() noexcept -> void {
       continue;
     }
 
-    consume(*log);
-    return;
+    return log;
+  }
+
+  return std::nullopt;
+}
+
+auto GlobalContext::HandleLog(const kero::log::Log& log) const noexcept
+    -> void {
+  std::lock_guard<std::mutex> lock(shared_state_mutex_);
+
+  for (auto& transport : shared_state_.transports) {
+    if (log.level > transport->GetLevel()) {
+      continue;
+    }
+
+    transport->OnLog(log);
   }
 }
 
@@ -146,48 +130,52 @@ auto RunOnThread(mpsc::Rx<std::unique_ptr<RunnerEvent>>&& runner_event_rx)
   std::optional<std::chrono::steady_clock::time_point> shutdown_deadline{};
 
   while (true) {
-    const auto shutdown_requested = shutdown_deadline.has_value();
-    if (shutdown_requested &&
-        std::chrono::steady_clock::now() > *shutdown_deadline) {
-      break;
-    }
-
-    auto event_opt = runner_event_rx.TryReceive();
-    if (shutdown_requested && !event_opt && GetGlobalContext().IsLogsEmpty()) {
-      break;
-    }
-
-    if (event_opt) {
-      auto& event_ptr = *event_opt;
-      if (!event_ptr) {
-        GetGlobalContext().LogSystemError(
-            "Internal: event_ptr must not be null.");
-        continue;
+    const auto event = runner_event_rx.TryReceive();
+    const auto log = GetGlobalContext().TryPopLog();
+    if (shutdown_deadline) {
+      if (std::chrono::steady_clock::now() > *shutdown_deadline) {
+        break;
       }
 
-      std::visit(
-          [&shutdown_deadline](auto&& event) {
-            using T = std::decay_t<decltype(event)>;
-
-            if constexpr (std::is_same_v<T, runner_event::Shutdown>) {
-              if (shutdown_deadline) {
-                GetGlobalContext().LogSystemError(
-                    "Shutdown already scheduled.");
-                return;
-              }
-
-              runner_event::Shutdown& shutdown = event;
-              shutdown_deadline =
-                  std::chrono::steady_clock::now() + shutdown.config.timeout;
-            } else {
-              static_assert(always_false_v<T>,
-                            "every RunnerEvent must be handled.");
-            }
-          },
-          *event_ptr);
+      if (!event && !log) {
+        break;
+      }
     }
 
-    GetGlobalContext().ConsumeLog();
+    if (event) {
+      if (!*event) {
+        GetGlobalContext().LogSystemError("Internal: *event must not be null.");
+      } else {
+        std::visit(
+            [&shutdown_deadline](auto&& event) {
+              using T = std::decay_t<decltype(event)>;
+
+              if constexpr (std::is_same_v<T, runner_event::Shutdown>) {
+                if (shutdown_deadline) {
+                  GetGlobalContext().LogSystemError(
+                      "Shutdown already scheduled.");
+                  return;
+                }
+
+                runner_event::Shutdown& shutdown = event;
+                shutdown_deadline =
+                    std::chrono::steady_clock::now() + shutdown.config.timeout;
+              } else {
+                static_assert(always_false_v<T>,
+                              "every RunnerEvent must be handled.");
+              }
+            },
+            **event);
+      }
+    }
+
+    if (log) {
+      if (!*log) {
+        GetGlobalContext().LogSystemError("Internal: *log must not be null.");
+      } else {
+        GetGlobalContext().HandleLog(**log);
+      }
+    }
   }
 }
 

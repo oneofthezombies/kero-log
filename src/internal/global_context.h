@@ -48,9 +48,11 @@ public:
   auto RemoveLogRx(const std::string& thread_id) noexcept -> Result<void>;
 
   auto Shutdown(ShutdownConfig&& config) noexcept -> void;
+
   auto AddTransport(std::unique_ptr<Transport>&& transport) noexcept -> void;
-  auto IsLogsEmpty() const noexcept -> bool;
-  auto ConsumeLog() noexcept -> void;
+
+  auto TryPopLog() noexcept -> std::optional<std::unique_ptr<kero::log::Log>>;
+  auto HandleLog(const kero::log::Log& log) const noexcept -> void;
 
 private:
   GlobalContext(mpsc::Tx<std::unique_ptr<RunnerEvent>>&& runner_event_tx,
