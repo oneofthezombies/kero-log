@@ -7,6 +7,20 @@ A memory-safe "asynchronous structured logging system" implementation written in
 Memory safety in programming languages is no longer an option. This is an area that must be met.  
 However, the status of the C++ programming language in the current compiler industry is absolute. So I wrote the code in C++, but developed it to meet memory safety features.  
 
+## Features
+
+### Non-blocking
+
+When the `LogBuilder`'s `Log()` function is called, the log object is only stored locally in the thread, and heavy `IO` tasks such as `Standard Out` or `File` are performed in the `Runner Thread`.
+
+### Structured Log
+
+You can save key, value using `LogBuilder`'s `Data(key, value)` method without having to include a key, value in the log message.
+
+### Multiple Transport
+
+The abstract class `Transport` can be implemented to add a variety of processing of `Log` objects.
+
 ## For Contributors
 
 This project was developed based on Bazel.  
