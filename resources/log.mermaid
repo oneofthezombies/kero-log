@@ -1,0 +1,34 @@
+sequenceDiagram
+
+actor mt as Main Thread
+participant mlocal as Main Thread Local Context
+participant global as Global Context
+participant olocal as Other Thread Local Context
+actor ot as Other Thread
+actor rt as Runner Thread
+
+rect rgb(50, 50, 50)
+    note right of mt: Info(message).Data(key, value).Log() called:
+    mt->>+mlocal: LocalContext().Send(log)
+    mlocal->>global: Enqueue to SPSC queue.
+    global-->>mlocal: return
+    mlocal-->>-mt: return
+end
+
+rect rgb(50, 50, 50)
+    note left of olocal: Info(message).Data(key, value).Log() called:
+    ot->>+olocal: LocalContext().Send(log)
+    olocal->>global: Enqueue to SPSC queue.
+    global-->>olocal: return
+    olocal-->>-ot: return
+
+end
+
+rect rgb(50, 50, 50)
+    note right of global: Handle the logs.
+    loop
+        rt->>+global: Dequeue from every SPSC queue.
+        global-->>-rt: log
+        rt->>rt: Handle the log.
+    end
+end

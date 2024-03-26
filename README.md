@@ -21,6 +21,16 @@ You can save key, value using `LogBuilder`'s `Data(key, value)` method without h
 
 The abstract class `Transport` can be implemented to add a variety of processing of `Log` objects.
 
+## Diagrams
+
+### Logging Sequence
+
+![log](/resources/log.png)
+
+### Variable Scopes
+
+![context](/resources/context.png)
+
 ## For Contributors
 
 This project was developed based on Bazel.  

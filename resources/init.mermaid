@@ -1,0 +1,28 @@
+sequenceDiagram
+
+actor mt as Main Thread
+participant mlocal as Main Thread Local Context
+participant global as Global Context
+actor rt as Runner Thread
+
+rect rgb(50, 50, 50)
+    note right of mt: Center{}.AddTransport(transport) called:
+    mt->>+global: GlobalContext().AddTransport(transport)
+    global->>+rt: When Global Context is <br/> created, Runner Thread is created.
+    loop
+        rt-->>rt: Handle event and log.
+    end
+    global-->>-mt: return
+end
+
+rect rgb(50, 50, 50)
+    note right of mt: Center{}.Shutdown(config) called:
+    mt->>+global: GlobalContext().Shutdown(config)
+    global->>rt: Send shutdown event.
+    loop
+        rt->>rt: Handle the logs for the timeout.
+    end
+    global->>rt: join()
+    rt-->>-global: exit
+    global-->>-mt: return
+end
