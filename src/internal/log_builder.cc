@@ -17,13 +17,13 @@ auto LogBuilder::Log() noexcept -> Result<void> {
                                     "Log already consumed, cannot log."}};
   }
 
-  if (!GetLocalContext()) {
+  if (auto& local_context = GetLocalContext()) {
+    local_context->SendLog(std::move(log_));
+    return Result<void>{};
+  } else {
     return Result<void>{kero::Error{ErrorCode::kLocalContextNotFound,
                                     "Failed to get LocalContext, cannot log."}};
   }
-
-  GetLocalContext()->SendLog(std::move(log_));
-  return Result<void>{};
 }
 
 auto Debug(std::string&& message, std::source_location&& location)
