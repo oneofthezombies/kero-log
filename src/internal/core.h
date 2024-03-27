@@ -3,7 +3,7 @@
 
 #include "../kero_core.h"
 #include "error_code.h"
-#include "kero_mpsc.h"
+#include <chrono>
 #include <source_location>
 #include <unordered_map>
 
@@ -30,8 +30,12 @@ struct Log {
 
   Log(std::string&& message, std::source_location&& location,
       const Level level) noexcept;
+  Log(Log&&) noexcept = default;
   ~Log() noexcept = default;
-  KERO_STRUCT_TYPE_MOVE(Log);
+  auto operator=(Log&&) noexcept -> Log& = default;
+
+  Log(const Log&) = delete;
+  auto operator=(const Log&) -> Log& = delete;
 };
 
 struct ShutdownConfig {
@@ -39,8 +43,12 @@ struct ShutdownConfig {
 
   ShutdownConfig() noexcept;
   ShutdownConfig(std::chrono::milliseconds&& timeout) noexcept;
+  ShutdownConfig(ShutdownConfig&&) noexcept = default;
   ~ShutdownConfig() noexcept = default;
-  KERO_STRUCT_TYPE_MOVE(ShutdownConfig);
+  auto operator=(ShutdownConfig&&) noexcept -> ShutdownConfig& = default;
+
+  ShutdownConfig(const ShutdownConfig&) = delete;
+  auto operator=(const ShutdownConfig&) -> ShutdownConfig& = delete;
 };
 
 } // namespace log

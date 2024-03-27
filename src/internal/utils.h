@@ -1,7 +1,8 @@
 #ifndef KERO_LOG_INTERNAL_UTILS_H
 #define KERO_LOG_INTERNAL_UTILS_H
 
-#include "kero_mpsc.h"
+#include <ostream>
+#include <thread>
 
 namespace kero {
 namespace log {
@@ -12,14 +13,22 @@ class NullStream : public std::ostream {
 public:
   NullStream() noexcept;
   ~NullStream() noexcept = default;
-  KERO_STRUCT_TYPE_PIN(NullStream);
+
+  NullStream(NullStream&&) = delete;
+  NullStream(const NullStream&) = delete;
+  auto operator=(NullStream&&) -> NullStream& = delete;
+  auto operator=(const NullStream&) -> NullStream& = delete;
 
 private:
   class NullBuffer : public std::streambuf {
   public:
     NullBuffer() noexcept = default;
     ~NullBuffer() noexcept = default;
-    KERO_STRUCT_TYPE_PIN(NullBuffer);
+
+    NullBuffer(NullBuffer&&) = delete;
+    NullBuffer(const NullBuffer&) = delete;
+    auto operator=(NullBuffer&&) -> NullBuffer& = delete;
+    auto operator=(const NullBuffer&) -> NullBuffer& = delete;
 
     virtual auto overflow(int c) noexcept -> int override;
   };

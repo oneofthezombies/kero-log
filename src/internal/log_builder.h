@@ -14,7 +14,11 @@ public:
   LogBuilder(std::string&& message, std::source_location&& location,
              const Level level) noexcept;
   ~LogBuilder() noexcept = default;
-  KERO_STRUCT_TYPE_PIN(LogBuilder);
+
+  LogBuilder(LogBuilder&&) = delete;
+  LogBuilder(const LogBuilder&) = delete;
+  auto operator=(LogBuilder&&) -> LogBuilder& = delete;
+  auto operator=(const LogBuilder&) -> LogBuilder& = delete;
 
   template <typename T>
   [[nodiscard]] auto Data(std::string&& key, T&& value) noexcept

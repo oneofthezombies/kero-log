@@ -10,8 +10,12 @@ class Transport {
 public:
   Transport() noexcept;
   Transport(const Level level) noexcept;
+  Transport(Transport&&) noexcept = default;
   virtual ~Transport() noexcept = default;
-  KERO_STRUCT_TYPE_MOVE(Transport);
+  auto operator=(Transport&&) noexcept -> Transport& = default;
+
+  Transport(const Transport&) = delete;
+  auto operator=(const Transport&) -> Transport& = delete;
 
   auto SetLevel(const Level level) noexcept -> void;
   auto GetLevel() const noexcept -> Level;
@@ -25,8 +29,14 @@ protected:
 class ConsolePlainTextTransport : public Transport {
 public:
   ConsolePlainTextTransport() noexcept = default;
+  ConsolePlainTextTransport(ConsolePlainTextTransport&&) noexcept = default;
   virtual ~ConsolePlainTextTransport() noexcept = default;
-  KERO_STRUCT_TYPE_MOVE(ConsolePlainTextTransport);
+  auto operator=(ConsolePlainTextTransport&&) noexcept
+      -> ConsolePlainTextTransport& = default;
+
+  ConsolePlainTextTransport(const ConsolePlainTextTransport&) = delete;
+  auto operator=(const ConsolePlainTextTransport&)
+      -> ConsolePlainTextTransport& = delete;
 
   virtual auto OnLog(const Log& log) noexcept -> void override;
 };

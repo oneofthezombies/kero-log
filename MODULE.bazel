@@ -2,7 +2,7 @@
 kero_log
 """
 
-module(name = "kero_log", version = "0.1.10")
+module(name = "kero_log", version = "0.2.0")
 
 bazel_dep(name = "googletest", version = "1.14.0")
 
@@ -15,7 +15,7 @@ git_override(
     commit = "204aa593e002cbd177d30f11f54cff3559110bb9",
 )
 
-KERO_MPSC_VERSION = "0.9.0"
+KERO_MPSC_VERSION = "0.10.0"
 bazel_dep(name = "kero_mpsc", version = KERO_MPSC_VERSION)
 archive_override(
     module_name = "kero_mpsc",

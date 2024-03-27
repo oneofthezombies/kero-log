@@ -2,6 +2,7 @@
 #define KERO_LOG_INTERNAL_GLOBAL_CONTEXT_H
 
 #include "core.h"
+#include "kero_mpsc.h"
 #include "kero_spsc.h"
 #include "runner_event.h"
 #include "transport.h"
@@ -19,7 +20,11 @@ public:
   public:
     Builder() noexcept = default;
     ~Builder() noexcept = default;
-    KERO_STRUCT_TYPE_PIN(Builder);
+
+    Builder(Builder&&) = delete;
+    Builder(const Builder&) = delete;
+    auto operator=(Builder&&) -> Builder& = delete;
+    auto operator=(const Builder&) -> Builder& = delete;
 
     auto Build() const noexcept -> std::unique_ptr<GlobalContext>;
   };
@@ -33,11 +38,19 @@ public:
 
     SharedState(std::ostream& system_error_stream) noexcept;
     ~SharedState() noexcept = default;
-    KERO_STRUCT_TYPE_PIN(SharedState);
+
+    SharedState(SharedState&&) = delete;
+    SharedState(const SharedState&) = delete;
+    auto operator=(SharedState&&) -> SharedState& = delete;
+    auto operator=(const SharedState&) -> SharedState& = delete;
   };
 
   ~GlobalContext() noexcept = default;
-  KERO_STRUCT_TYPE_PIN(GlobalContext);
+
+  GlobalContext(GlobalContext&&) = delete;
+  GlobalContext(const GlobalContext&) = delete;
+  auto operator=(GlobalContext&&) -> GlobalContext& = delete;
+  auto operator=(const GlobalContext&) -> GlobalContext& = delete;
 
   auto UseSystemErrorStream(std::ostream& stream) noexcept -> void;
   auto LogSystemError(std::string&& message) noexcept -> void;

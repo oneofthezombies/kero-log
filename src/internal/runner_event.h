@@ -2,7 +2,6 @@
 #define KERO_LOG_INTERNAL_RUNNER_EVENT_H
 
 #include "core.h"
-#include "kero_mpsc.h"
 #include <variant>
 
 namespace kero {
@@ -13,8 +12,12 @@ struct Shutdown {
   ShutdownConfig config;
 
   Shutdown(ShutdownConfig&& config) noexcept;
+  Shutdown(Shutdown&&) noexcept = default;
   ~Shutdown() noexcept = default;
-  KERO_STRUCT_TYPE_MOVE(Shutdown);
+  auto operator=(Shutdown&&) noexcept -> Shutdown& = default;
+
+  Shutdown(const Shutdown&) = delete;
+  auto operator=(const Shutdown&) -> Shutdown& = delete;
 };
 
 } // namespace runner_event

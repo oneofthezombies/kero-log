@@ -12,15 +12,23 @@ class LocalContext {
 public:
   class Builder {
   public:
-    Builder() = default;
-    ~Builder() = default;
-    KERO_STRUCT_TYPE_PIN(Builder);
+    Builder() noexcept = default;
+    ~Builder() noexcept = default;
+
+    Builder(Builder&&) = delete;
+    Builder(const Builder&) = delete;
+    auto operator=(Builder&&) -> Builder& = delete;
+    auto operator=(const Builder&) -> Builder& = delete;
 
     auto Build() const noexcept -> Result<LocalContext>;
   };
 
+  LocalContext(LocalContext&&) noexcept = default;
   ~LocalContext() noexcept;
-  KERO_STRUCT_TYPE_MOVE(LocalContext);
+  auto operator=(LocalContext&&) noexcept -> LocalContext& = default;
+
+  LocalContext(const LocalContext&) = delete;
+  auto operator=(const LocalContext&) -> LocalContext& = delete;
 
   auto SendLog(std::unique_ptr<kero::log::Log>&& log) const noexcept -> void;
 
