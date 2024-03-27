@@ -12,7 +12,9 @@
 
 namespace kero {
 
-template <typename T> struct Error {
+template <typename T>
+  requires std::is_enum_v<T>
+struct Error {
   T code;
   std::string message;
 
