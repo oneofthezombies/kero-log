@@ -21,7 +21,7 @@ cc_library(
         "src/internal/utils.h",
     ],
     hdrs = [
-        "src/kero_common.h",
+        "src/kero_core.h",
         "src/kero_log.h",
     ],
     copts = ["-std=c++20"],
@@ -44,10 +44,10 @@ cc_test(
 )
 
 cc_test(
-    name = "kero_common_test",
+    name = "kero_core_test",
     srcs = [
-        "src/kero_common.h",
-        "src/kero_common_test.cc",
+        "src/kero_core.h",
+        "src/kero_core_test.cc",
     ],
     copts = ["-std=c++20"],
     deps = [

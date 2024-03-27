@@ -11,6 +11,7 @@
 #include <string>
 
 namespace kero {
+namespace core {
 
 template <typename T>
   requires std::is_enum_v<T>
@@ -63,6 +64,7 @@ private:
   std::unique_ptr<E> error_;
 };
 
+} // namespace core
 } // namespace kero
 
 #endif // KERO_LOG_KERO_COMMON_H

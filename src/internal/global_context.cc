@@ -45,8 +45,9 @@ auto GlobalContext::AddLogRx(
   std::lock_guard<std::mutex> lock(shared_state_mutex_);
   if (shared_state_.log_rx_map.find(thread_id) !=
       shared_state_.log_rx_map.end()) {
-    return Result<void>{Error{ErrorCode::kLogRxAlreadyRegistered,
-                              "Key " + thread_id + " already exists"}};
+    return Result<void>{
+        kero::core::Error{ErrorCode::kLogRxAlreadyRegistered,
+                          "Key " + thread_id + " already exists"}};
   }
 
   shared_state_.log_rx_map.emplace(thread_id, std::move(log_rx));
@@ -58,8 +59,8 @@ auto GlobalContext::RemoveLogRx(const std::string& thread_id) noexcept
   std::lock_guard<std::mutex> lock(shared_state_mutex_);
   auto entry = shared_state_.log_rx_map.find(thread_id);
   if (entry == shared_state_.log_rx_map.end()) {
-    return Result<void>{
-        Error{ErrorCode::kLogRxNotFound, "Key " + thread_id + " not found"}};
+    return Result<void>{kero::core::Error{ErrorCode::kLogRxNotFound,
+                                          "Key " + thread_id + " not found"}};
   }
 
   while (auto log = entry->second.TryReceive()) {

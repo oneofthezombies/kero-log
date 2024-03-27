@@ -1,7 +1,7 @@
 #ifndef KERO_LOG_INTERNAL_CORE_H
 #define KERO_LOG_INTERNAL_CORE_H
 
-#include "../kero_common.h"
+#include "../kero_core.h"
 #include "error_code.h"
 #include "kero_mpsc.h"
 #include <source_location>
@@ -10,7 +10,8 @@
 namespace kero {
 namespace log {
 
-template <typename T> using Result = kero::Result<T, kero::Error<ErrorCode>>;
+template <typename T>
+using Result = kero::core::Result<T, kero::core::Error<ErrorCode>>;
 
 enum class Level : int8_t {
   kError = 0,
